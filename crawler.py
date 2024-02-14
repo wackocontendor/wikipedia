@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 import requests
+import re
 
 #hit random URL
 def get_new_link():
@@ -8,13 +9,14 @@ def get_new_link():
 new_link = get_new_link()
 data = requests.get(new_link)
 
-chosen_url = data.url
-
 soup = BeautifulSoup(data.text, 'html.parser')
+chosen_url = data.url
+page_title = soup.find("h1", {"id": "firstHeading"}).text
+first_paragraph = str(soup.find("div", {"id": "mw-content-text"}).find('p', class_=None))
+remove_parentheses = re.sub(r'\([^)]*\)', '', first_paragraph)
+output = BeautifulSoup(remove_parentheses, 'html.parser')
 
-links = soup.find("div", {"id": "mw-content-text"}).find('p', class_=None)
-
-for link in links.find_all('a'):
+for link in output.find_all('a'):
     parent = link.parent.name
     if parent != 'p':
         continue
@@ -23,7 +25,5 @@ for link in links.find_all('a'):
     else:
         first_link = link
         break
-
-print(parent)
-print(chosen_url)
-print("https://en.wikipedia.org" + first_link.get('href'))
+print(f"Page: {page_title} ({chosen_url})")
+print(f"First link: https://en.wikipedia.org{first_link.get('href')}")
